@@ -1,0 +1,46 @@
+[SYSTEM HACKED]  
+[USER]  
+barlahat\balah
+[NETWORK]  
+
+Windows IP Configuration
+
+
+Wireless LAN adapter ??‡‰…˜ —…‰* 1:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . : 
+
+Wireless LAN adapter ??‡‰…˜ —…‰* 2:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . : 
+
+Ethernet adapter VMware Network Adapter VMnet1:
+
+   Connection-specific DNS Suffix  . : 
+   Link-local IPv6 Address . . . . . : fe80::163e:c80c:db37:11a5%15
+   IPv4 Address. . . . . . . . . . . : 192.168.190.1
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 
+
+Ethernet adapter VMware Network Adapter VMnet8:
+
+   Connection-specific DNS Suffix  . : 
+   Link-local IPv6 Address . . . . . : fe80::23fb:79c2:5fe2:60f7%11
+   IPv4 Address. . . . . . . . . . . : 192.168.95.1
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 
+
+Wireless LAN adapter ??Wi-Fi:
+
+   Connection-specific DNS Suffix  . : jce.ac.il
+   Link-local IPv6 Address . . . . . : fe80::844c:1eb4:4fee:79f1%12
+   IPv4 Address. . . . . . . . . . . : 10.8.33.150
+   Subnet Mask . . . . . . . . . . . : 255.255.240.0
+   Default Gateway . . . . . . . . . : 10.8.32.1
+
+Ethernet adapter ??‡‰…˜ ˜™š ™Œ Bluetooth:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . : 
