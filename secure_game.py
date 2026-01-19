@@ -7,9 +7,7 @@ from flask import Flask, request, make_response, render_template_string
 
 app = Flask(__name__)
 
-# === שכבת הגנה 1: מפתח סודי ===
-# המפתח הזה משמש לחתימה על הנתונים.
-# התוקף לא יודע אותו, ולכן לא יכול לזייף חתימות.
+# מפתח סודי לחתימה
 SECRET_KEY = b"MySuperSecretKey_DoNotShare"
 
 
@@ -20,7 +18,6 @@ class Player:
         self.coins = coins
         self.is_admin = is_admin
 
-    # המרה ל-Dictionary (בשביל JSON)
     def to_dict(self):
         return {
             "username": self.username,
@@ -30,11 +27,11 @@ class Player:
         }
 
 
-# פונקציה ליצירת חתימה (HMAC)
 def sign_data(data_str):
     return hmac.new(SECRET_KEY, data_str.encode(), hashlib.sha256).hexdigest()
 
 
+# HTML עם תוספת של אזור התראות אדום
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -46,7 +43,18 @@ HTML_TEMPLATE = """
         h1 { color: #2ea043; }
         .secure-badge { background-color: #2ea043; color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold; }
         .stats { color: #79c0ff; font-size: 18px; margin-bottom: 20px; border-bottom: 1px solid #30363d; padding-bottom: 15px; text-align: left; }
-        .shop-item { border: 1px solid #d2a8ff; padding: 15px; margin-top: 20px; color: #d2a8ff; }
+
+        /* עיצוב ההתראה האדומה */
+        .alert-box {
+            background-color: #3d0c0c;
+            border: 2px solid #ff0000;
+            color: #ff0000;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 50% { border-color: transparent; } }
     </style>
 </head>
 <body>
@@ -54,6 +62,14 @@ HTML_TEMPLATE = """
         <h1>🛡️ SECURE GAME 🛡️</h1>
         <div class="secure-badge">JSON + HMAC Protected</div>
         <br><br>
+
+        {% if alert %}
+            <div class="alert-box">
+                🚨 SECURITY ALERT 🚨<br>
+                {{ alert }}<br>
+                (Attack Blocked & IP Logged)
+            </div>
+        {% endif %}
 
         <div class="stats">
             👤 USER: <b>{{ player.username }}</b><br>
@@ -68,7 +84,7 @@ HTML_TEMPLATE = """
             {% if player.coins >= 1000000 or player.is_admin %}
                 <p style="color: green;">FLAG: CTF{S3cur1ty_B3st_Pr4ct1c3s}</p>
             {% else %}
-                <p style="color: red;">🔒 INSUFFICIENT FUNDS</p>
+                <p style="color: #ff7b72;">🔒 INSUFFICIENT FUNDS</p>
             {% endif %}
         </div>
     </div>
@@ -81,45 +97,55 @@ HTML_TEMPLATE = """
 def home():
     cookie_value = request.cookies.get('secure_session')
     player_data = None
+    alert_msg = None  # משתנה להודעת האבטחה
 
     if cookie_value:
         try:
-            # פירוק ה-Cookie: המידע בנפרד והחתימה בנפרד
+            # ניסיון לפענח את העוגייה
             decoded = base64.b64decode(cookie_value).decode()
-            data_json, signature = decoded.split("::")
 
-            # === שכבת הגנה 2: בדיקת חתימה ===
-            # אנחנו מחשבים מחדש את החתימה לפי המידע שקיבלנו
+            # בדיקה ראשונית: האם הפורמט תקין? (מידע::חתימה)
+            if "::" not in decoded:
+                raise ValueError("Invalid cookie format")
+
+            data_json, signature = decoded.split("::", 1)
+
+            # חישוב חתימה צפויה
             expected_signature = sign_data(data_json)
 
-            # אם החתימה לא תואמת - מישהו נגע במידע!
+            # === רגע האמת: השוואת חתימות ===
             if hmac.compare_digest(expected_signature, signature):
-                # === שכבת הגנה 3: שימוש ב-JSON ===
-                # JSON לא יכול להריץ קוד, רק להחזיק מידע
+                # הכל תקין - טוענים את המשתמש
                 data_dict = json.loads(data_json)
                 player_data = Player(**data_dict)
             else:
-                print("[!] TAMPERING DETECTED: Invalid signature!")
-        except Exception as e:
-            print(f"[!] Error: {e}")
+                # === תקיפה זוהתה! ===
+                print("[!] SECURITY ALERT: Signature mismatch! Cookie tampering detected.")
+                alert_msg = "Data Tampering Detected! Invalid HMAC Signature."
 
-    # יצירת שחקן חדש אם אין (או אם הייתה פריצה)
+        except Exception as e:
+            # תקיפה זוהתה (למשל ניסיון להכניס Pickle במקום JSON)
+            print(f"[!] SECURITY ALERT: Malformed Payload. Error: {e}")
+            alert_msg = "Malicious Payload Detected! Structure invalid."
+
+    # אם לא הצלחנו לטעון משתמש (כי זו כניסה ראשונה או כי חסמנו תקיפה)
     if not player_data:
+        # אנחנו יוצרים משתמש אורח חדש, אבל...
+        # אם יש alert_msg, המשתמש יראה את האזהרה האדומה על המסך!
         player_data = Player("Guest_Secure")
 
-        # סריאליזציה בטוחה
+        # יצירת עוגייה תקינה חדשה
         data_json = json.dumps(player_data.to_dict())
         signature = sign_data(data_json)
-
-        # חיבור המידע והחתימה עם מפריד
         final_payload = f"{data_json}::{signature}"
         cookie_val = base64.b64encode(final_payload.encode()).decode()
 
-        resp = make_response(render_template_string(HTML_TEMPLATE, player=player_data))
+        # אנחנו מעבירים את ה-alert ל-HTML
+        resp = make_response(render_template_string(HTML_TEMPLATE, player=player_data, alert=alert_msg))
         resp.set_cookie('secure_session', cookie_val)
         return resp
 
-    return render_template_string(HTML_TEMPLATE, player=player_data)
+    return render_template_string(HTML_TEMPLATE, player=player_data, alert=alert_msg)
 
 
 if __name__ == '__main__':

